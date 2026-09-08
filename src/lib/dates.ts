@@ -41,7 +41,9 @@ export const monthLabel = (date: Date) => format(date, "MMMM 'de' yyyy", { local
 export const formatTime = (time: string | null, timeFormat: "24h" | "12h" = "24h") => {
   if (!time) return null;
   if (timeFormat === "24h") return time;
-  const [h, m] = time.split(":").map(Number);
+  const parts = time.split(":");
+  const h = Number(parts[0] ?? 0);
+  const m = Number(parts[1] ?? 0);
   const suffix = h >= 12 ? "PM" : "AM";
   const hour = h % 12 === 0 ? 12 : h % 12;
   return `${hour}:${String(m).padStart(2, "0")} ${suffix}`;
