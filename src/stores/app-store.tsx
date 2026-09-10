@@ -239,7 +239,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           time: input.time ?? "09:00",
           endTime: input.endTime ?? null,
           categoryId: input.categoryId ?? null,
-          location: input.location,
+          location: input.location ?? "",
         };
         patch((prev) => ({ ...prev, events: [...prev.events, event] }));
       },
@@ -352,7 +352,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           name: item.name,
           quantity: item.quantity ?? 1,
           unit: item.unit ?? "un",
-          note: item.note,
+          note: item.note ?? "",
           bought: false,
         };
         patch((prev) => ({
