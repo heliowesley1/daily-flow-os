@@ -1,3 +1,4 @@
+import { SelectField } from "@/components/common/SelectField";
 import { useState } from "react";
 import { addMonths } from "date-fns";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
@@ -16,7 +17,6 @@ import { TaskFormDialog } from "@/components/tasks/TaskFormDialog";
 import { EventFormDialog } from "@/components/events/EventFormDialog";
 import { Button } from "@/components/ui/button";
 import type { CalendarEvent, Task } from "@/types";
-
 export function PlannerView({ weekly = false }: { weekly?: boolean }) {
   const { state, moveTaskToDate } = useApp();
   const [date, setDate] = useState(new Date());
@@ -74,12 +74,12 @@ export function PlannerView({ weekly = false }: { weekly?: boolean }) {
         <Button variant="outline" onClick={() => setDate(new Date())}>
           Hoje
         </Button>
-        <select aria-label="Período" value={mode} onChange={(e) => setMode(e.target.value)}>
+        <SelectField aria-label="Período" value={mode} onChange={(e) => setMode(e.target.value)}>
           <option value="month">Mês</option>
           <option value="week">Semana</option>
           <option value="day">Dia</option>
-        </select>
-        <select
+        </SelectField>
+        <SelectField
           aria-label="Filtrar área"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
@@ -90,7 +90,7 @@ export function PlannerView({ weekly = false }: { weekly?: boolean }) {
               {c.name}
             </option>
           ))}
-        </select>
+        </SelectField>
       </div>
       <div className={`flow-calendar ${mode === "day" ? "single-day" : ""}`}>
         {days.map((day) => {

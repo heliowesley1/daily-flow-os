@@ -1,11 +1,13 @@
+import { useConfirm } from "@/components/common/ConfirmProvider";
+import { SelectField } from "@/components/common/SelectField";
 import { useState } from "react";
 import { Plus, Star, Trash2, FileText } from "lucide-react";
 import { useApp } from "@/stores/app-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Empty } from "./shared";
-
 export function NotesView() {
+  const confirm = useConfirm();
   const { state, addNote, updateNote, deleteNote, toggleNoteFavorite } = useApp();
   const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -68,7 +70,7 @@ export function NotesView() {
         {note ? (
           <article className="flow-panel flow-editor">
             <div className="flex gap-3 items-center mb-7">
-              <select
+              <SelectField
                 aria-label="Área da nota"
                 value={note.categoryId ?? ""}
                 onChange={(e) => updateNote(note.id, { categoryId: e.target.value || null })}
@@ -79,7 +81,7 @@ export function NotesView() {
                     {c.name}
                   </option>
                 ))}
-              </select>
+              </SelectField>
               <span className="ml-auto text-xs text-muted-foreground">Salvamento automático</span>
               <button
                 aria-label="Favoritar página"
@@ -90,8 +92,8 @@ export function NotesView() {
               </button>
               <button
                 aria-label="Excluir página"
-                onClick={() => {
-                  if (window.confirm("Excluir esta página?")) {
+                onClick={async () => {
+                  if (await confirm("Excluir esta página?")) {
                     deleteNote(note.id);
                     setSelected(null);
                   }

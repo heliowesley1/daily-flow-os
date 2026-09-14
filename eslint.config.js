@@ -9,6 +9,8 @@ export default tseslint.config(
   {
     ignores: [
       "dist",
+      "release",
+      ".test-runtime",
       ".output",
       ".vinxi",
       ".npm-cache",

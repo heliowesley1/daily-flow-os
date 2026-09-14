@@ -1,6 +1,6 @@
+import { useConfirm } from "@/components/common/ConfirmProvider";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,22 +22,20 @@ import {
 import { todayISO } from "@/lib/dates";
 import { useApp } from "@/stores/app-store";
 import type { CalendarEvent } from "@/types";
-
 interface EventFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   event?: CalendarEvent | null;
   defaultDate?: string;
 }
-
 export function EventFormDialog({ open, onOpenChange, event, defaultDate }: EventFormDialogProps) {
+  const confirm = useConfirm();
   const { state, addEvent, updateEvent, deleteEvent } = useApp();
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(todayISO());
   const [time, setTime] = useState("09:00");
   const [endTime, setEndTime] = useState("");
   const [categoryId, setCategoryId] = useState("none");
-
   useEffect(() => {
     if (!open) return;
     setTitle(event?.title ?? "");
@@ -46,7 +44,6 @@ export function EventFormDialog({ open, onOpenChange, event, defaultDate }: Even
     setEndTime(event?.endTime ?? "");
     setCategoryId(event?.categoryId ?? "none");
   }, [open, event, defaultDate]);
-
   const submit = () => {
     if (!date || !time || (endTime && endTime <= time)) {
       toast.error("Informe data e horário válidos. O término deve ser após o início.");
@@ -72,7 +69,6 @@ export function EventFormDialog({ open, onOpenChange, event, defaultDate }: Even
     }
     onOpenChange(false);
   };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -144,8 +140,8 @@ export function EventFormDialog({ open, onOpenChange, event, defaultDate }: Even
           {event && (
             <Button
               variant="destructive"
-              onClick={() => {
-                if (window.confirm("Excluir este compromisso?")) {
+              onClick={async () => {
+                if (await confirm("Excluir este compromisso?")) {
                   deleteEvent(event.id);
                   onOpenChange(false);
                 }

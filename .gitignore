@@ -8,6 +8,9 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+release/
+hosting/api/config.php
+.test-runtime/
 .npm-cache/
 test-results/
 lint-results.txt

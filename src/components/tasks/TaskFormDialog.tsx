@@ -1,6 +1,6 @@
+import { SelectField } from "@/components/common/SelectField";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,22 +29,26 @@ import { STATUS_LABEL, STATUS_COLUMNS } from "@/lib/tasks";
 import { AddLine } from "@/components/workspace/shared";
 import type { Subtask } from "@/types";
 import type { Priority, Recurrence, Task, TaskStatus } from "@/types";
-
-const RECURRENCES: { value: Recurrence["kind"]; label: string }[] = [
+const RECURRENCES: {
+  value: Recurrence["kind"];
+  label: string;
+}[] = [
   { value: "none", label: "Não repete" },
   { value: "daily", label: "Todos os dias" },
   { value: "weekdays", label: "Dias de semana" },
   { value: "weekly", label: "Toda semana" },
   { value: "monthly", label: "Todo mês" },
 ];
-
 interface TaskFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   task?: Task | null;
-  defaults?: { date?: string | null; status?: TaskStatus; projectId?: string | null };
+  defaults?: {
+    date?: string | null;
+    status?: TaskStatus;
+    projectId?: string | null;
+  };
 }
-
 export function TaskFormDialog({ open, onOpenChange, task, defaults }: TaskFormDialogProps) {
   const { state, addTask, updateTask } = useApp();
   const [title, setTitle] = useState("");
@@ -58,7 +62,6 @@ export function TaskFormDialog({ open, onOpenChange, task, defaults }: TaskFormD
   const [focus, setFocus] = useState(false);
   const [status, setStatus] = useState<TaskStatus>("todo");
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
-
   useEffect(() => {
     if (!open) return;
     setTitle(task?.title ?? "");
@@ -81,7 +84,6 @@ export function TaskFormDialog({ open, onOpenChange, task, defaults }: TaskFormD
     setNotes(task?.notes ?? "");
     setFocus(task?.focus ?? false);
   }, [open, task, defaults?.date, defaults?.projectId, defaults?.status]);
-
   const submit = () => {
     if (!title.trim()) {
       toast.error("Dê um nome para a tarefa");
@@ -103,7 +105,6 @@ export function TaskFormDialog({ open, onOpenChange, task, defaults }: TaskFormD
       status,
       subtasks,
     };
-
     if (task) {
       updateTask(task.id, payload);
       toast.success("Tarefa atualizada");
@@ -113,7 +114,6 @@ export function TaskFormDialog({ open, onOpenChange, task, defaults }: TaskFormD
     }
     onOpenChange(false);
   };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
@@ -242,7 +242,7 @@ export function TaskFormDialog({ open, onOpenChange, task, defaults }: TaskFormD
 
           <label className="grid gap-2 text-sm">
             Status
-            <select
+            <SelectField
               className="rounded-lg border p-2 bg-background"
               aria-label="Status da tarefa"
               value={status}
@@ -253,7 +253,7 @@ export function TaskFormDialog({ open, onOpenChange, task, defaults }: TaskFormD
                   {STATUS_LABEL[s]}
                 </option>
               ))}
-            </select>
+            </SelectField>
           </label>
           <div>
             <p className="text-sm font-medium">Subtarefas</p>

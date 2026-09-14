@@ -1,3 +1,5 @@
+import { useConfirm } from "@/components/common/ConfirmProvider";
+import { SelectField } from "@/components/common/SelectField";
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { useApp } from "@/stores/app-store";
@@ -8,8 +10,8 @@ import { TaskRow } from "@/components/tasks/TaskRow";
 import { TaskFormDialog } from "@/components/tasks/TaskFormDialog";
 import { AddLine, Empty, Panel } from "./shared";
 import type { ProjectStatus } from "@/types";
-
 export function ProjectsView() {
+  const confirm = useConfirm();
   const { state, addProject, updateProject, deleteProject } = useApp();
   const [projectId, setProjectId] = useState<string | null>(null);
   return (
@@ -32,8 +34,8 @@ export function ProjectsView() {
             action={
               <button
                 aria-label={`Excluir projeto ${p.name}`}
-                onClick={() => {
-                  if (window.confirm("Excluir o projeto? As tarefas serão mantidas."))
+                onClick={async () => {
+                  if (await confirm("Excluir o projeto? As tarefas serão mantidas."))
                     deleteProject(p.id);
                 }}
               >
@@ -55,7 +57,7 @@ export function ProjectsView() {
               onChange={(e) => updateProject(p.id, { description: e.target.value })}
             />
             <div className="flex flex-wrap gap-3 my-4">
-              <select
+              <SelectField
                 aria-label="Status do projeto"
                 value={p.status}
                 onChange={(e) => updateProject(p.id, { status: e.target.value as ProjectStatus })}
@@ -63,7 +65,7 @@ export function ProjectsView() {
                 <option value="ativo">Em andamento</option>
                 <option value="pausado">Pausado</option>
                 <option value="concluido">Concluído</option>
-              </select>
+              </SelectField>
               <Input
                 className="w-auto"
                 aria-label="Prazo do projeto"

@@ -1,3 +1,4 @@
+import { SelectField } from "@/components/common/SelectField";
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "@/stores/app-store";
@@ -8,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { STATUS_COLUMNS, STATUS_LABEL, sortByPriority } from "@/lib/tasks";
 import { Empty } from "./shared";
 import type { TaskStatus } from "@/types";
-
 export function TasksView() {
   const { state, updateTask, reorderTasks } = useApp();
   const [query, setQuery] = useState("");
@@ -77,7 +77,7 @@ export function TasksView() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <select
+        <SelectField
           aria-label="Categoria"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
@@ -88,21 +88,25 @@ export function TasksView() {
               {c.name}
             </option>
           ))}
-        </select>
-        <select aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
+        </SelectField>
+        <SelectField aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="all">Todos os status</option>
           {STATUS_COLUMNS.map((s) => (
             <option key={s} value={s}>
               {STATUS_LABEL[s]}
             </option>
           ))}
-        </select>
-        <select aria-label="Visualização" value={mode} onChange={(e) => setMode(e.target.value)}>
+        </SelectField>
+        <SelectField
+          aria-label="Visualização"
+          value={mode}
+          onChange={(e) => setMode(e.target.value)}
+        >
           <option value="list">Lista</option>
           <option value="kanban">Kanban</option>
           <option value="priority">Por prioridade</option>
           <option value="date">Por data</option>
-        </select>
+        </SelectField>
       </div>
       {mode === "kanban" ? (
         <div className="flow-kanban">

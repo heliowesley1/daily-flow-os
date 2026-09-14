@@ -2,6 +2,8 @@ import { useState, type ReactNode } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Sparkles } from "lucide-react";
 
 export function Panel({
   title,
@@ -13,19 +15,22 @@ export function Panel({
   children: ReactNode;
 }) {
   return (
-    <section className="flow-panel">
-      <div className="flex items-center justify-between gap-3 mb-5">
-        <h2 className="font-semibold tracking-tight">{title}</h2>
+    <Card className="flow-panel">
+      <CardHeader className="flex flex-row items-center justify-between gap-3 p-0 mb-5 space-y-0">
+        <CardTitle className="font-semibold tracking-tight text-base">{title}</CardTitle>
         {action}
-      </div>
-      {children}
-    </section>
+      </CardHeader>
+      <CardContent className="p-0">{children}</CardContent>
+    </Card>
   );
 }
 export function Empty({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-      {children}
+    <div className="modern-empty">
+      <span>
+        <Sparkles size={23} />
+      </span>
+      <p>{children}</p>
     </div>
   );
 }

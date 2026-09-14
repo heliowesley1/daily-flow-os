@@ -44,8 +44,8 @@ export const createSeedState = (): AppState => {
       usage: { tasksThisMonth: 72 },
     },
     preferences: {
-      theme: "system",
-      accent: "frost",
+      theme: "light",
+      accent: "violet",
       firstDayOfWeek: 1,
       dateFormat: "dd/MM/yyyy",
       timeFormat: "24h",

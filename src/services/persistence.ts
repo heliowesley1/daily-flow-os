@@ -1,5 +1,7 @@
 import type { AppState } from "@/types";
 import { parseBackup } from "./backup";
+import { remoteEnabled } from "./api";
+import { ServerAdapter } from "./server-persistence";
 
 /**
  * Camada de abstração de persistência.
@@ -36,7 +38,9 @@ export class LocalStorageAdapter implements PersistenceAdapter {
   }
 }
 
-export const persistence: PersistenceAdapter = new LocalStorageAdapter();
+export const persistence: PersistenceAdapter = remoteEnabled
+  ? new ServerAdapter()
+  : new LocalStorageAdapter();
 
 export const uid = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto

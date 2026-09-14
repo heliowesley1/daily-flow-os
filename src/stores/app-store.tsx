@@ -5,6 +5,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useRef,
   type ReactNode,
 } from "react";
 
@@ -13,6 +14,7 @@ import { toast } from "sonner";
 import { transitionTask } from "@/lib/recurrence";
 import { todayISO } from "@/lib/dates";
 import { persistence, uid } from "@/services/persistence";
+import { remoteEnabled } from "@/services/api";
 import type {
   AppState,
   CalendarEvent,
@@ -80,6 +82,8 @@ interface AppContextValue extends AppActions {
   state: AppState;
   hydrated: boolean;
   storageBlocked: boolean;
+  saveStatus: "saved" | "saving" | "error";
+  retrySave: () => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -88,6 +92,12 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(() => createSeedState());
   const [hydrated, setHydrated] = useState(false);
   const [storageBlocked, setStorageBlocked] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "error">("saved");
+  const pending = useRef(false);
+  const lastSaved = useRef<AppState | null>(null);
+  const initialState = useRef(state);
+  const [saveAttempt, setSaveAttempt] = useState(0);
+  const retrySave = useCallback(() => setSaveAttempt((attempt) => attempt + 1), []);
 
   useEffect(() => {
     let active = true;
@@ -95,7 +105,10 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       .load()
       .then((loaded) => {
         if (!active) return;
-        if (loaded && loaded.version === 1) setState(loaded);
+        if (loaded && loaded.version === 1) {
+          lastSaved.current = loaded;
+          setState(loaded);
+        } else lastSaved.current = initialState.current;
         setHydrated(true);
       })
       .catch(() => {
@@ -110,16 +123,52 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!hydrated || storageBlocked) return;
-    void persistence
-      .save(state)
-      .catch(() =>
-        toast.error(
-          "Não foi possível salvar neste navegador. Exporte um backup nas configurações.",
-          { id: "storage-error" },
-        ),
-      );
-  }, [state, hydrated, storageBlocked]);
+    if (!hydrated || storageBlocked || lastSaved.current === state) return;
+    let active = true;
+    pending.current = true;
+    setSaveStatus("saving");
+    const timer = setTimeout(
+      () => {
+        void persistence
+          .save(state)
+          .then(() => {
+            if (active) {
+              pending.current = false;
+              lastSaved.current = state;
+              setSaveStatus("saved");
+            }
+          })
+          .catch((error) => {
+            if (active) setSaveStatus("error");
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : "Não foi possível salvar. Exporte um backup antes de sair.",
+              { id: "storage-error", duration: 10000 },
+            );
+          });
+      },
+      remoteEnabled ? 400 : 0,
+    );
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [state, hydrated, storageBlocked, saveAttempt]);
+  useEffect(() => {
+    window.addEventListener("online", retrySave);
+    return () => window.removeEventListener("online", retrySave);
+  }, [retrySave]);
+  useEffect(() => {
+    const warn = (e: BeforeUnloadEvent) => {
+      if (pending.current) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, []);
 
   const patch = useCallback((fn: (prev: AppState) => AppState) => setState(fn), []);
 
@@ -497,8 +546,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   }, [patch]);
 
   const value = useMemo<AppContextValue>(
-    () => ({ state, hydrated, storageBlocked, ...actions }),
-    [state, hydrated, storageBlocked, actions],
+    () => ({ state, hydrated, storageBlocked, saveStatus, retrySave, ...actions }),
+    [state, hydrated, storageBlocked, saveStatus, retrySave, actions],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

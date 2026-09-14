@@ -1,6 +1,30 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { ArrowUpRight, ChevronDown, Keyboard, Menu, Plus, Search, Sparkles, X } from "lucide-react";
+import {
+  ArrowUpRight,
+  ChevronDown,
+  Keyboard,
+  Menu,
+  Plus,
+  Search,
+  Sparkles,
+  Moon,
+  Sun,
+  CheckCircle2,
+  FileText,
+  CalendarDays,
+  Flame,
+  LogOut,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { remoteEnabled, api } from "@/services/api";
 import { Toaster } from "sonner";
 import { NAV_ITEMS, SETTINGS_ITEM } from "@/config/nav";
 import { useApp } from "@/stores/app-store";
@@ -17,7 +41,16 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { state, hydrated, storageBlocked, completeOnboarding, startEmpty } = useApp();
+  const {
+    state,
+    hydrated,
+    storageBlocked,
+    completeOnboarding,
+    startEmpty,
+    updatePreferences,
+    saveStatus,
+    retrySave,
+  } = useApp();
   useAppearance();
   const isMobile = useIsMobile();
   const path = useLocation({ select: (l) => l.pathname });
@@ -40,7 +73,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         e.metaKey ||
         e.altKey ||
         (e.target as HTMLElement)?.closest(
-          'input,textarea,select,[contenteditable="true"],[role="dialog"]',
+          'input,textarea,select,[contenteditable="true"],[role="dialog"],[role="alertdialog"],[role="combobox"],[role="menu"],[role="listbox"]',
         )
       )
         return;
@@ -80,17 +113,17 @@ export function AppShell({ children }: { children: ReactNode }) {
           </span>{" "}
           daily flow<span className="text-xs text-muted-foreground font-normal">OS</span>
         </Link>
-        <div className="flow-workspace">
+        <Link to="/configuracoes" className="flow-workspace">
           <span className="flow-avatar">{state.profile.name.slice(0, 1).toUpperCase()}</span>
           <div className="flex-1">
             <strong className="text-sm">{state.profile.name}</strong>
             <p className="text-xs text-muted-foreground">Meu espaço pessoal</p>
           </div>
           <ChevronDown size={14} />
-        </div>
+        </Link>
         <button className="flow-search" onClick={() => setDialog("search")}>
           <Search size={16} />
-          Buscar no meu espaço <kbd>Ctrl K</kbd>
+          Buscar no espaço <kbd>Ctrl K</kbd>
         </button>
         <p className="flow-nav-label">MINHA VIDA</p>
         <nav className="grid gap-1">
@@ -131,8 +164,23 @@ export function AppShell({ children }: { children: ReactNode }) {
             Atalhos de teclado
           </button>
           <p className="text-[11px] text-muted-foreground px-3 mt-3">
-            Dados salvos neste navegador
+            <span className="status-dot" />
+            {remoteEnabled ? "Espaço privado · MySQL" : "Espaço pessoal · Local"}
           </p>
+          {remoteEnabled && (
+            <Button
+              className="w-full justify-start mt-3"
+              variant="ghost"
+              disabled={saveStatus !== "saved"}
+              onClick={async () => {
+                await api("logout", { method: "POST", body: {} });
+                location.reload();
+              }}
+            >
+              <LogOut size={16} />
+              Sair da conta
+            </Button>
+          )}
         </div>
       </aside>
       <div className="flow-main">
@@ -144,16 +192,76 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="text-muted-foreground hidden sm:inline">/</span>
           <span>{current?.label ?? "Meu Dia"}</span>
           <div className="ml-auto flex gap-3">
+            <span className="save-indicator" role="status">
+              <span className="status-dot" />
+              {saveStatus === "saved"
+                ? "Tudo salvo"
+                : saveStatus === "saving"
+                  ? "Salvando…"
+                  : "Falha ao salvar"}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Alternar tema"
+              onClick={() =>
+                updatePreferences({
+                  theme: document.documentElement.classList.contains("dark") ? "light" : "dark",
+                })
+              }
+            >
+              <Sun className="hidden dark:block" size={17} />
+              <Moon className="dark:hidden" size={17} />
+            </Button>
             <button aria-label="Buscar" onClick={() => setDialog("search")}>
               <Search size={18} />
             </button>
-            <Button size="sm" onClick={() => setDialog("task")}>
-              <Plus size={16} />
-              Nova tarefa
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm">
+                  <Plus size={16} />
+                  Criar novo
+                  <ChevronDown size={13} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>O que vamos organizar?</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setDialog("task")}>
+                  <CheckCircle2 size={16} />
+                  Tarefa <kbd className="ml-auto text-xs opacity-50">N</kbd>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDialog("event")}>
+                  <CalendarDays size={16} />
+                  Compromisso
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDialog("habit")}>
+                  <Flame size={16} />
+                  Hábito
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDialog("note")}>
+                  <FileText size={16} />
+                  Nota rápida
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
         <main className="flow-content">
+          {saveStatus === "error" && (
+            <div role="alert" className="flow-panel mb-5 flex flex-wrap gap-3 items-center text-sm">
+              <p className="flex-1">
+                As últimas alterações ainda não foram salvas. Tente novamente ou exporte um backup
+                antes de sair.
+              </p>
+              <Button variant="outline" size="sm" onClick={retrySave}>
+                Tentar salvar
+              </Button>
+              <Link to="/configuracoes" className="underline">
+                Exportar backup
+              </Link>
+            </div>
+          )}
           {storageBlocked && (
             <div role="alert" className="flow-panel mb-5">
               Não foi possível ler seus dados locais. O salvamento está pausado para preservar o
@@ -235,7 +343,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             Explorar com dados de exemplo
           </Button>
           <p className="text-xs text-muted-foreground">
-            Salvamento local. Exporte backups nas configurações para guardar seus dados.
+            {remoteEnabled
+              ? "Seus dados ficam protegidos na sua conta, no seu servidor."
+              : "Salvamento local. Exporte backups nas configurações para guardar seus dados."}
           </p>
         </DialogContent>
       </Dialog>

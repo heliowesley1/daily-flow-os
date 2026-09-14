@@ -1,11 +1,13 @@
+import { useConfirm } from "@/components/common/ConfirmProvider";
+import { SelectField } from "@/components/common/SelectField";
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { useApp } from "@/stores/app-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AddLine, Empty, Panel } from "./shared";
-
 export function ShoppingView() {
+  const confirm = useConfirm();
   const {
     state,
     addShoppingList,
@@ -49,8 +51,8 @@ export function ShoppingView() {
             action={
               <button
                 aria-label="Excluir lista"
-                onClick={() => {
-                  if (window.confirm("Excluir esta lista e todos os itens?"))
+                onClick={async () => {
+                  if (await confirm("Excluir esta lista e todos os itens?"))
                     deleteShoppingList(list.id);
                 }}
               >
@@ -84,11 +86,15 @@ export function ShoppingView() {
                 onChange={(e) => setQuantity(e.target.value)}
                 required
               />
-              <select aria-label="Unidade" value={unit} onChange={(e) => setUnit(e.target.value)}>
+              <SelectField
+                aria-label="Unidade"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+              >
                 {["un", "kg", "g", "L", "pacote"].map((u) => (
                   <option key={u}>{u}</option>
                 ))}
-              </select>
+              </SelectField>
               <Button type="submit">Adicionar</Button>
             </form>
             {[false, true].map((bought) => (
@@ -98,8 +104,8 @@ export function ShoppingView() {
                   {bought && list.items.some((i) => i.bought) && (
                     <button
                       className="text-xs text-muted-foreground"
-                      onClick={() => {
-                        if (window.confirm("Remover os itens já comprados?")) clearBought(list.id);
+                      onClick={async () => {
+                        if (await confirm("Remover os itens já comprados?")) clearBought(list.id);
                       }}
                     >
                       Limpar comprados

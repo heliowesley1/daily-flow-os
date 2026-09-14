@@ -1,3 +1,6 @@
+import { useConfirm } from "@/components/common/ConfirmProvider";
+import { remoteEnabled } from "@/services/api";
+import { SelectField } from "@/components/common/SelectField";
 import { Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useApp } from "@/stores/app-store";
@@ -7,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AddLine, Panel, Field } from "./shared";
 import type { AccentKey, ThemeMode } from "@/types";
-
 export function SettingsView() {
+  const confirm = useConfirm();
   const {
     state,
     updateProfile,
@@ -49,24 +52,25 @@ export function SettingsView() {
             />
           </Field>
           <p className="text-sm text-muted-foreground mt-5">
-            Seu espaço é pessoal e fica salvo neste navegador. Não há conta ou sincronização entre
-            dispositivos nesta versão.
+            {remoteEnabled
+              ? "Seu espaço é privado e salvo no MySQL da sua hospedagem. Entre com a mesma conta para acessar em outro dispositivo."
+              : "Seu espaço é pessoal e fica salvo neste navegador. Use o pacote cPanel para ativar login e salvamento no servidor."}
           </p>
         </Panel>
         <Panel title="Aparência">
           <div className="grid gap-4">
             <Field label="Tema">
-              <select
+              <SelectField
                 value={state.preferences.theme}
                 onChange={(e) => updatePreferences({ theme: e.target.value as ThemeMode })}
               >
                 <option value="system">Automático</option>
                 <option value="light">Claro</option>
                 <option value="dark">Escuro</option>
-              </select>
+              </SelectField>
             </Field>
             <Field label="Cor de destaque">
-              <select
+              <SelectField
                 value={state.preferences.accent}
                 onChange={(e) => updatePreferences({ accent: e.target.value as AccentKey })}
               >
@@ -82,14 +86,14 @@ export function SettingsView() {
                     {l}
                   </option>
                 ))}
-              </select>
+              </SelectField>
             </Field>
           </div>
         </Panel>
         <Panel title="Sua rotina">
           <div className="grid gap-4">
             <Field label="Primeiro dia da semana">
-              <select
+              <SelectField
                 value={state.preferences.firstDayOfWeek}
                 onChange={(e) =>
                   updatePreferences({ firstDayOfWeek: Number(e.target.value) as 0 | 1 })
@@ -97,16 +101,16 @@ export function SettingsView() {
               >
                 <option value={1}>Segunda-feira</option>
                 <option value={0}>Domingo</option>
-              </select>
+              </SelectField>
             </Field>
             <Field label="Formato de horário">
-              <select
+              <SelectField
                 value={state.preferences.timeFormat}
                 onChange={(e) => updatePreferences({ timeFormat: e.target.value as "24h" | "12h" })}
               >
                 <option value="24h">24 horas</option>
                 <option value="12h">12 horas</option>
-              </select>
+              </SelectField>
             </Field>
             <label className="flex items-center gap-3 text-sm">
               <input
@@ -130,11 +134,9 @@ export function SettingsView() {
                 <Button
                   aria-label={`Excluir categoria ${c.name}`}
                   variant="ghost"
-                  onClick={() => {
+                  onClick={async () => {
                     if (
-                      window.confirm(
-                        "Excluir categoria? Os registros serão mantidos sem categoria.",
-                      )
+                      await confirm("Excluir categoria? Os registros serão mantidos sem categoria.")
                     )
                       deleteCategory(c.id);
                   }}
@@ -148,8 +150,9 @@ export function SettingsView() {
         </Panel>
         <Panel title="Seus dados, com você">
           <p className="text-sm text-muted-foreground mb-4">
-            Exporte um backup regularmente. Limpar os dados do navegador remove seu espaço. Você
-            pode importar o arquivo em outro dispositivo.
+            {remoteEnabled
+              ? "Mantenha uma cópia independente dos seus dados. Exporte backups regularmente e faça também o backup do banco no cPanel."
+              : "Exporte um backup regularmente. Limpar os dados do navegador remove seu espaço. Você pode importar o arquivo em outro dispositivo."}
           </p>
           <div className="flex flex-wrap gap-3">
             <Button variant="outline" onClick={download}>
@@ -168,10 +171,10 @@ export function SettingsView() {
                   e.target.value = "";
                   if (!file) return;
                   try {
-                    if (file.size > 10_000_000) throw new Error("O backup deve ter até 10 MB.");
+                    if (file.size > 10000000) throw new Error("O backup deve ter até 10 MB.");
                     const backup = parseBackup(await file.text());
                     if (
-                      window.confirm(
+                      await confirm(
                         "Substituir os dados atuais por este backup? Exporte os dados atuais antes de continuar.",
                       )
                     ) {
@@ -193,9 +196,9 @@ export function SettingsView() {
           </p>
           <Button
             variant="destructive"
-            onClick={() => {
+            onClick={async () => {
               if (
-                window.confirm(
+                await confirm(
                   "Apagar todos os registros pessoais? Esta ação não pode ser desfeita. Exporte um backup antes.",
                 )
               ) {

@@ -4,6 +4,7 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
+    "build:cpanel": "vite build --config vite.portable.config.ts && node scripts/package-cpanel.mjs",
     "test": "node --import ./tests/register.mjs --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
     "dev": "vite dev",

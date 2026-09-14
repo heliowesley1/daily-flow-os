@@ -1,3 +1,4 @@
+import { useConfirm } from "@/components/common/ConfirmProvider";
 import { useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useApp } from "@/stores/app-store";
@@ -13,8 +14,8 @@ import { HabitFormDialog } from "@/components/habits/HabitFormDialog";
 import { Button } from "@/components/ui/button";
 import { Empty, Panel } from "./shared";
 import type { Habit } from "@/types";
-
 export function HabitsView() {
+  const confirm = useConfirm();
   const { state, toggleHabitDay, deleteHabit } = useApp();
   const [open, setOpen] = useState(false);
   const [habit, setHabit] = useState<Habit | null>(null);
@@ -54,8 +55,8 @@ export function HabitsView() {
                 </button>
                 <button
                   aria-label={`Excluir ${h.name}`}
-                  onClick={() => {
-                    if (window.confirm("Excluir este hábito e seu histórico?")) deleteHabit(h.id);
+                  onClick={async () => {
+                    if (await confirm("Excluir este hábito e seu histórico?")) deleteHabit(h.id);
                   }}
                 >
                   <Trash2 size={15} />
