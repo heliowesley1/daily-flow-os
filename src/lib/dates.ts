@@ -29,8 +29,7 @@ export const monthGrid = (date: Date, firstDay: 0 | 1 = 1) => {
   return Array.from({ length: total }, (_, i) => addDays(start, i));
 };
 
-export const formatLongDate = (date: Date) =>
-  format(date, "EEEE, d 'de' MMMM", { locale: ptBR });
+export const formatLongDate = (date: Date) => format(date, "EEEE, d 'de' MMMM", { locale: ptBR });
 
 export const formatShortDate = (date: Date) => format(date, "d 'de' MMM", { locale: ptBR });
 

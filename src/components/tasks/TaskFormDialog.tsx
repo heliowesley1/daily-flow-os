@@ -12,12 +12,22 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { todayISO } from "@/lib/dates";
 import { PRIORITY_LABEL } from "@/lib/tasks";
 import { useApp } from "@/stores/app-store";
+import { uid } from "@/services/persistence";
+import { STATUS_LABEL, STATUS_COLUMNS } from "@/lib/tasks";
+import { AddLine } from "@/components/workspace/shared";
+import type { Subtask } from "@/types";
 import type { Priority, Recurrence, Task, TaskStatus } from "@/types";
 
 const RECURRENCES: { value: Recurrence["kind"]; label: string }[] = [
@@ -46,11 +56,23 @@ export function TaskFormDialog({ open, onOpenChange, task, defaults }: TaskFormD
   const [recurrence, setRecurrence] = useState<Recurrence["kind"]>("none");
   const [notes, setNotes] = useState("");
   const [focus, setFocus] = useState(false);
+  const [status, setStatus] = useState<TaskStatus>("todo");
+  const [subtasks, setSubtasks] = useState<Subtask[]>([]);
 
   useEffect(() => {
     if (!open) return;
     setTitle(task?.title ?? "");
-    setDate(task?.date ?? defaults?.date ?? todayISO());
+    setDate(
+      task
+        ? (task.date ?? "")
+        : defaults?.status === "inbox"
+          ? ""
+          : defaults?.date === null
+            ? ""
+            : (defaults?.date ?? todayISO()),
+    );
+    setStatus(task?.status ?? defaults?.status ?? "todo");
+    setSubtasks(task?.subtasks ?? []);
     setTime(task?.time ?? "");
     setPriority(task?.priority ?? "media");
     setCategoryId(task?.categoryId ?? "none");
@@ -58,7 +80,7 @@ export function TaskFormDialog({ open, onOpenChange, task, defaults }: TaskFormD
     setRecurrence(task?.recurrence.kind ?? "none");
     setNotes(task?.notes ?? "");
     setFocus(task?.focus ?? false);
-  }, [open, task, defaults?.date, defaults?.projectId]);
+  }, [open, task, defaults?.date, defaults?.projectId, defaults?.status]);
 
   const submit = () => {
     if (!title.trim()) {
@@ -72,16 +94,21 @@ export function TaskFormDialog({ open, onOpenChange, task, defaults }: TaskFormD
       priority,
       categoryId: categoryId === "none" ? null : categoryId,
       projectId: projectId === "none" ? null : projectId,
-      recurrence: { kind: recurrence } as Recurrence,
+      recurrence:
+        recurrence === "custom" && task?.recurrence.kind === "custom"
+          ? task.recurrence
+          : ({ kind: recurrence } as Recurrence),
       notes,
       focus,
+      status,
+      subtasks,
     };
 
     if (task) {
       updateTask(task.id, payload);
       toast.success("Tarefa atualizada");
     } else {
-      addTask({ ...payload, status: defaults?.status ?? (date ? "todo" : "inbox") });
+      addTask(payload);
       toast.success("Tarefa criada");
     }
     onOpenChange(false);
@@ -210,6 +237,54 @@ export function TaskFormDialog({ open, onOpenChange, task, defaults }: TaskFormD
               rows={3}
               placeholder="Detalhes, links, contexto…"
               onChange={(e) => setNotes(e.target.value)}
+            />
+          </div>
+
+          <label className="grid gap-2 text-sm">
+            Status
+            <select
+              className="rounded-lg border p-2 bg-background"
+              aria-label="Status da tarefa"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as TaskStatus)}
+            >
+              {STATUS_COLUMNS.map((s) => (
+                <option key={s} value={s}>
+                  {STATUS_LABEL[s]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div>
+            <p className="text-sm font-medium">Subtarefas</p>
+            <div className="grid gap-2 mt-2">
+              {subtasks.map((s) => (
+                <div className="flex items-center gap-2 text-sm" key={s.id}>
+                  <input
+                    aria-label={`Concluir subtarefa ${s.title}`}
+                    type="checkbox"
+                    checked={s.done}
+                    onChange={() =>
+                      setSubtasks((items) =>
+                        items.map((i) => (i.id === s.id ? { ...i, done: !i.done } : i)),
+                      )
+                    }
+                  />
+                  <span className="flex-1">{s.title}</span>
+                  <button
+                    aria-label={`Excluir subtarefa ${s.title}`}
+                    onClick={() => setSubtasks((items) => items.filter((i) => i.id !== s.id))}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+            <AddLine
+              placeholder="Novo passo…"
+              onAdd={(title) =>
+                setSubtasks((items) => [...items, { id: uid(), title, done: false }])
+              }
             />
           </div>
 

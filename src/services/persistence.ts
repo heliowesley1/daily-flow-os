@@ -1,4 +1,5 @@
 import type { AppState } from "@/types";
+import { parseBackup } from "./backup";
 
 /**
  * Camada de abstração de persistência.
@@ -18,19 +19,15 @@ export class LocalStorageAdapter implements PersistenceAdapter {
     try {
       const raw = window.localStorage.getItem(KEY);
       if (!raw) return null;
-      return JSON.parse(raw) as AppState;
+      return parseBackup(raw);
     } catch {
-      return null;
+      throw new Error("Não foi possível ler os dados locais.");
     }
   }
 
   async save(state: AppState): Promise<void> {
     if (typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem(KEY, JSON.stringify(state));
-    } catch {
-      /* quota / private mode */
-    }
+    window.localStorage.setItem(KEY, JSON.stringify(state));
   }
 
   async clear(): Promise<void> {

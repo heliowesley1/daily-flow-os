@@ -38,7 +38,10 @@ export function CheckToggle({
         className,
       )}
     >
-      <Check className={cn(size === "sm" ? "size-3" : "size-3.5", checked && "pop")} strokeWidth={3} />
+      <Check
+        className={cn(size === "sm" ? "size-3" : "size-3.5", checked && "pop")}
+        strokeWidth={3}
+      />
     </button>
   );
 }

@@ -9,6 +9,8 @@ import {
 } from "react";
 
 import { createSeedState } from "@/data/seed";
+import { toast } from "sonner";
+import { transitionTask } from "@/lib/recurrence";
 import { todayISO } from "@/lib/dates";
 import { persistence, uid } from "@/services/persistence";
 import type {
@@ -70,11 +72,14 @@ interface AppActions {
   updateProfile: (patch: Partial<AppState["profile"]>) => void;
   completeOnboarding: (data: { name: string; focusAreas: string[] }) => void;
   resetDemoData: () => void;
+  startEmpty: () => void;
+  replaceState: (state: AppState) => void;
 }
 
 interface AppContextValue extends AppActions {
   state: AppState;
   hydrated: boolean;
+  storageBlocked: boolean;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -82,28 +87,45 @@ const AppContext = createContext<AppContextValue | null>(null);
 export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(() => createSeedState());
   const [hydrated, setHydrated] = useState(false);
+  const [storageBlocked, setStorageBlocked] = useState(false);
 
   useEffect(() => {
     let active = true;
-    persistence.load().then((loaded) => {
-      if (!active) return;
-      if (loaded && loaded.version === 1) setState(loaded);
-      setHydrated(true);
-    });
+    persistence
+      .load()
+      .then((loaded) => {
+        if (!active) return;
+        if (loaded && loaded.version === 1) setState(loaded);
+        setHydrated(true);
+      })
+      .catch(() => {
+        if (active) {
+          setStorageBlocked(true);
+          setHydrated(true);
+        }
+      });
     return () => {
       active = false;
     };
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
-    void persistence.save(state);
-  }, [state, hydrated]);
+    if (!hydrated || storageBlocked) return;
+    void persistence
+      .save(state)
+      .catch(() =>
+        toast.error(
+          "Não foi possível salvar neste navegador. Exporte um backup nas configurações.",
+          { id: "storage-error" },
+        ),
+      );
+  }, [state, hydrated, storageBlocked]);
 
   const patch = useCallback((fn: (prev: AppState) => AppState) => setState(fn), []);
 
   const actions = useMemo<AppActions>(() => {
-    const nextOrder = (tasks: Task[]) => (tasks.length ? Math.max(...tasks.map((t) => t.order)) + 1 : 0);
+    const nextOrder = (tasks: Task[]) =>
+      tasks.length ? Math.max(...tasks.map((t) => t.order)) + 1 : 0;
 
     return {
       addTask(input) {
@@ -123,7 +145,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           order: 0,
           subtasks: input.subtasks ?? [],
           createdAt: new Date().toISOString(),
-          completedAt: null,
+          completedAt: input.status === "done" ? new Date().toISOString() : null,
         };
         patch((prev) => ({
           ...prev,
@@ -136,22 +158,30 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         return task;
       },
       updateTask(id, taskPatch) {
+        const nextId = uid();
+        const now = new Date().toISOString();
         patch((prev) => ({
           ...prev,
-          tasks: prev.tasks.map((t) => (t.id === id ? { ...t, ...taskPatch } : t)),
+          tasks: transitionTask(prev.tasks, id, taskPatch, nextId, now),
         }));
       },
       toggleTask(id) {
-        patch((prev) => ({
-          ...prev,
-          tasks: prev.tasks.map((t) =>
-            t.id === id
-              ? t.status === "done"
-                ? { ...t, status: t.date ? "todo" : "inbox", completedAt: null }
-                : { ...t, status: "done", completedAt: new Date().toISOString() }
-              : t,
-          ),
-        }));
+        const nextId = uid();
+        const now = new Date().toISOString();
+        patch((prev) => {
+          const task = prev.tasks.find((t) => t.id === id);
+          if (!task) return prev;
+          return {
+            ...prev,
+            tasks: transitionTask(
+              prev.tasks,
+              id,
+              { status: task.status === "done" ? (task.date ? "todo" : "inbox") : "done" },
+              nextId,
+              now,
+            ),
+          };
+        });
       },
       toggleSubtask(taskId, subtaskId) {
         patch((prev) => ({
@@ -411,6 +441,9 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           ...prev,
           categories: prev.categories.filter((c) => c.id !== id),
           tasks: prev.tasks.map((t) => (t.categoryId === id ? { ...t, categoryId: null } : t)),
+          notes: prev.notes.map((n) => (n.categoryId === id ? { ...n, categoryId: null } : n)),
+          events: prev.events.map((e) => (e.categoryId === id ? { ...e, categoryId: null } : e)),
+          habits: prev.habits.map((h) => (h.categoryId === id ? { ...h, categoryId: null } : h)),
         }));
       },
       updatePreferences(prefPatch) {
@@ -436,12 +469,36 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           preferences: prev.preferences,
         }));
       },
+      startEmpty() {
+        setStorageBlocked(false);
+        patch((prev) => ({
+          ...prev,
+          tasks: [],
+          habits: [],
+          notes: [],
+          quickNotes: [],
+          events: [],
+          projects: [],
+          shoppingLists: [],
+          subscription: {
+            ...prev.subscription,
+            planId: "free",
+            status: "active",
+            renewsAt: null,
+            usage: { tasksThisMonth: 0 },
+          },
+        }));
+      },
+      replaceState(next) {
+        setState(next);
+        setStorageBlocked(false);
+      },
     };
   }, [patch]);
 
   const value = useMemo<AppContextValue>(
-    () => ({ state, hydrated, ...actions }),
-    [state, hydrated, actions],
+    () => ({ state, hydrated, storageBlocked, ...actions }),
+    [state, hydrated, storageBlocked, actions],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -1,8 +1,8 @@
 node_modules
-dist
+.npm-cache
 .output
-.vinxi
-pnpm-lock.yaml
+.wrangler
+.tanstack
+src/routeTree.gen.ts
 package-lock.json
-bun.lock
-routeTree.gen.ts
+test-results

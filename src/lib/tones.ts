@@ -50,7 +50,10 @@ export const PRIORITY_CLASSES: Record<Priority, string> = {
   baixa: "bg-muted/60 text-muted-foreground",
 };
 
-export const ACCENTS: Record<AccentKey, { label: string; primary: string; soft: string; swatch: string }> = {
+export const ACCENTS: Record<
+  AccentKey,
+  { label: string; primary: string; soft: string; swatch: string }
+> = {
   frost: {
     label: "Frost",
     primary: "oklch(0.545 0.184 262)",

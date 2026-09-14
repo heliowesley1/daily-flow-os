@@ -12,7 +12,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { todayISO } from "@/lib/dates";
 import { useApp } from "@/stores/app-store";
 import type { CalendarEvent } from "@/types";
@@ -25,7 +31,7 @@ interface EventFormDialogProps {
 }
 
 export function EventFormDialog({ open, onOpenChange, event, defaultDate }: EventFormDialogProps) {
-  const { state, addEvent, updateEvent } = useApp();
+  const { state, addEvent, updateEvent, deleteEvent } = useApp();
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(todayISO());
   const [time, setTime] = useState("09:00");
@@ -42,6 +48,10 @@ export function EventFormDialog({ open, onOpenChange, event, defaultDate }: Even
   }, [open, event, defaultDate]);
 
   const submit = () => {
+    if (!date || !time || (endTime && endTime <= time)) {
+      toast.error("Informe data e horário válidos. O término deve ser após o início.");
+      return;
+    }
     if (!title.trim()) {
       toast.error("Dê um nome ao compromisso");
       return;
@@ -131,6 +141,19 @@ export function EventFormDialog({ open, onOpenChange, event, defaultDate }: Even
         </div>
 
         <DialogFooter>
+          {event && (
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (window.confirm("Excluir este compromisso?")) {
+                  deleteEvent(event.id);
+                  onOpenChange(false);
+                }
+              }}
+            >
+              Excluir
+            </Button>
+          )}
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>

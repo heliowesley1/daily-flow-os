@@ -29,8 +29,7 @@ export const sortByOrder = (a: Task, b: Task) => a.order - b.order;
 export const sortByPriority = (a: Task, b: Task) =>
   PRIORITY_ORDER.indexOf(a.priority) - PRIORITY_ORDER.indexOf(b.priority);
 
-export const overdueTasks = (tasks: Task[]) =>
-  tasks.filter((t) => !isDone(t) && isOverdue(t.date));
+export const overdueTasks = (tasks: Task[]) => tasks.filter((t) => !isDone(t) && isOverdue(t.date));
 
 export const todayTasks = (tasks: Task[]) => tasksForDate(tasks, todayISO());
 

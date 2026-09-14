@@ -28,6 +28,7 @@ export interface Subtask {
 }
 
 export interface Task {
+  recurrenceSourceId?: string;
   id: string;
   title: string;
   notes?: string;

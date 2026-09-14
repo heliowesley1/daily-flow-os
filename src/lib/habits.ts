@@ -3,15 +3,29 @@ import type { Habit } from "@/types";
 
 export const isHabitDoneOn = (habit: Habit, iso: string) => habit.history.includes(iso);
 
+export function isHabitScheduled(habit: Habit, iso: string) {
+  const day = fromISO(iso).getDay();
+  return (
+    habit.frequency.kind === "daily" ||
+    habit.frequency.kind === "weekly" ||
+    (habit.frequency.kind === "weekdays" && day > 0 && day < 6) ||
+    (habit.frequency.kind === "custom" && habit.frequency.days.includes(day))
+  );
+}
+
 export const currentStreak = (habit: Habit, reference = new Date()) => {
+  if (habit.frequency.kind === "custom" && !habit.frequency.days.length) return 0;
   const set = new Set(habit.history);
   let streak = 0;
   let cursor = reference;
   // permite que o dia de hoje ainda não esteja concluído
   if (!set.has(toISO(cursor))) cursor = addDays(cursor, -1);
+  while (!isHabitScheduled(habit, toISO(cursor))) cursor = addDays(cursor, -1);
   while (set.has(toISO(cursor))) {
     streak += 1;
     cursor = addDays(cursor, -1);
+    while (!isHabitScheduled(habit, toISO(cursor)) && habit.frequency.kind !== "weekly")
+      cursor = addDays(cursor, -1);
   }
   return streak;
 };
@@ -22,7 +36,14 @@ export const bestStreak = (habit: Habit) => {
   let run = 0;
   let prev: string | null = null;
   for (const iso of sorted) {
-    if (prev && differenceInCalendarDays(fromISO(iso), fromISO(prev)) === 1) run += 1;
+    const gap = prev ? differenceInCalendarDays(fromISO(iso), fromISO(prev)) : 0;
+    const consecutive =
+      prev &&
+      gap > 0 &&
+      Array.from({ length: Math.max(0, gap - 1) }, (_, i) =>
+        toISO(addDays(fromISO(prev!), i + 1)),
+      ).every((d) => !isHabitScheduled(habit, d));
+    if (consecutive) run += 1;
     else run = 1;
     best = Math.max(best, run);
     prev = iso;

@@ -8,6 +8,9 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.npm-cache/
+test-results/
+lint-results.txt
 dist
 dist-ssr
 .output

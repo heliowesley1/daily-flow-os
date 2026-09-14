@@ -29,7 +29,11 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/progresso", label: "Meu Progresso", icon: BarChart3 },
 ];
 
-export const SETTINGS_ITEM: NavItem = { to: "/configuracoes", label: "Configurações", icon: Settings };
+export const SETTINGS_ITEM: NavItem = {
+  to: "/configuracoes",
+  label: "Configurações",
+  icon: Settings,
+};
 
 export const MOBILE_ITEMS: NavItem[] = [
   { to: "/", label: "Hoje", icon: Sparkles },

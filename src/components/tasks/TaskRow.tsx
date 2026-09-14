@@ -61,12 +61,21 @@ export function TaskRow({
         </div>
 
         <button type="button" onClick={() => setEditing(true)} className="min-w-0 text-left">
-          <p className={cn("truncate text-sm font-medium", done && "text-muted-foreground line-through")}>
+          <p
+            className={cn(
+              "truncate text-sm font-medium",
+              done && "text-muted-foreground line-through",
+            )}
+          >
             {task.title}
           </p>
           <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-muted-foreground">
             {showDate && task.date && <span>{formatShortDate(fromISO(task.date))}</span>}
-            {task.time && <span className="tabular-nums">{formatTime(task.time, state.preferences.timeFormat)}</span>}
+            {task.time && (
+              <span className="tabular-nums">
+                {formatTime(task.time, state.preferences.timeFormat)}
+              </span>
+            )}
             {late && <span className="font-semibold text-destructive">atrasada</span>}
             {task.subtasks.length > 0 && (
               <span>

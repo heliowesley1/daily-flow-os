@@ -1,12 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import {
-  CalendarDays,
-  CheckCircle2,
-  Flame,
-  NotebookPen,
-  Rocket,
-  ShoppingCart,
-} from "lucide-react";
+import { CalendarDays, CheckCircle2, Flame, NotebookPen, Rocket, ShoppingCart } from "lucide-react";
 
 import {
   CommandDialog,
@@ -50,8 +43,12 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
         {state.tasks.length > 0 && (
           <CommandGroup heading="Tarefas">
-            {state.tasks.slice(0, 12).map((task) => (
-              <CommandItem key={task.id} value={`tarefa ${task.title}`} onSelect={() => go("/tarefas")}>
+            {state.tasks.map((task) => (
+              <CommandItem
+                key={task.id}
+                value={`tarefa ${task.title}`}
+                onSelect={() => go("/tarefas")}
+              >
                 <CheckCircle2 className="size-4" />
                 {task.title}
               </CommandItem>
@@ -62,7 +59,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         {state.habits.length > 0 && (
           <CommandGroup heading="Hábitos">
             {state.habits.map((habit) => (
-              <CommandItem key={habit.id} value={`hábito ${habit.name}`} onSelect={() => go("/habitos")}>
+              <CommandItem
+                key={habit.id}
+                value={`hábito ${habit.name}`}
+                onSelect={() => go("/habitos")}
+              >
                 <Flame className="size-4" />
                 {habit.name}
               </CommandItem>
@@ -99,7 +100,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         {state.shoppingLists.length > 0 && (
           <CommandGroup heading="Listas">
             {state.shoppingLists.map((list) => (
-              <CommandItem key={list.id} value={`lista ${list.name}`} onSelect={() => go("/compras")}>
+              <CommandItem
+                key={list.id}
+                value={`lista ${list.name}`}
+                onSelect={() => go("/compras")}
+              >
                 <ShoppingCart className="size-4" />
                 {list.name}
               </CommandItem>
@@ -109,7 +114,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
         {state.events.length > 0 && (
           <CommandGroup heading="Compromissos">
-            {state.events.slice(0, 10).map((event) => (
+            {state.events.map((event) => (
               <CommandItem
                 key={event.id}
                 value={`evento ${event.title}`}
